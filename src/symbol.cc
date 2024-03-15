@@ -249,7 +249,7 @@ std::string syntrix::Symbol::to_string()
             result += "CarriageReturn";
             break;
         case NewLine:
-            result += "NewLine\n";
+            result += "NewLine";
             break;
         case Tab:
             result += "Tab";

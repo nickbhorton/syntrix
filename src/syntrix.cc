@@ -1,8 +1,8 @@
 #include <arpa/inet.h>
-#include <format>
 #include <cstdlib>
 #include <cstring>
 #include <ctime>
+#include <format>
 #include <iostream>
 #include <netinet/in.h>
 #include <sstream>
@@ -75,36 +75,59 @@ static bool is_name_symbol(syntrix::Symbol::Kind s)
     return false;
 }
 
-std::vector<int> get_clusters(const std::string &input)
+std::vector<std::tuple<syntrix::Symbol, int>>
+get_clusters(const std::string &input)
 {
-    std::vector<int> result;
-
-    int cluster_count = 0;
-    syntrix::Symbol previous_symbol{0};
-    for (const auto &c : input)
+    std::vector<std::tuple<syntrix::Symbol, int>> result;
+    std::stringstream in{input};
+    char c;
+    while (in.get(c))
     {
-        syntrix::Symbol current_symbol{static_cast<uint8_t>(c)};
-        if (is_name_symbol(current_symbol.get_symbol_kind()))
+        char start_char = c;
+        int repeat_count = 1;
+        while (in.peek() == start_char)
         {
-            cluster_count++;
+            in.get(c);
+            repeat_count++;
+        }
+        result.push_back(
+            {syntrix::Symbol{static_cast<uint8_t>(start_char)}, repeat_count});
+    }
+    return result;
+}
+
+enum class ClusterType
+{
+    None,
+    Identifier
+};
+
+std::vector<
+    std::tuple<std::vector<std::tuple<syntrix::Symbol, int>>, ClusterType>>
+combine_identifiers(std::vector<std::tuple<syntrix::Symbol, int>> input)
+{
+    std::vector<
+        std::tuple<std::vector<std::tuple<syntrix::Symbol, int>>, ClusterType>>
+        result;
+    std::vector<std::tuple<syntrix::Symbol, int>> working;
+    for (size_t i = 0; i < input.size(); i++)
+    {
+        auto current = input[i];
+        if (is_name_symbol(std::get<0>(current).get_symbol_kind()))
+        {
+            working.push_back(current);
         }
         else
         {
-            if (cluster_count > 0)
+            if (working.size() != 0)
             {
-                result.push_back(cluster_count);
-                cluster_count = 0;
+                result.push_back({working, ClusterType::Identifier});
+                working.clear();
             }
-            if (c == 0)
-            {
-                result.push_back(0);
-            }
-            else
-            {
-                result.push_back(1);
-            }
+            working.push_back(current);
+            result.push_back({working, ClusterType::None});
+            working.clear();
         }
-        previous_symbol = current_symbol;
     }
     return result;
 }
@@ -122,52 +145,46 @@ int main()
     std::stringstream ss{};
     ss << clear;
 
-    std::vector<int> cluster_vector = get_clusters(input);
-    size_t input_index = 0;
-    size_t cv_index = 0;
-    while (cv_index < cluster_vector.size())
+    auto cluster_vector = get_clusters(input);
+    auto identifyer_matrix = combine_identifiers(cluster_vector);
+    for (size_t i = 0; i < identifyer_matrix.size(); i++)
     {
-        if (cluster_vector[cv_index] > 1)
+        auto [current_cluster_vector, cluster_type] = identifyer_matrix[i];
+        switch (cluster_type)
         {
-            for (int i = 0; i < cluster_vector[cv_index]; i++)
+            case ClusterType::None:
             {
-                ss << syntrix::Symbol{static_cast<uint8_t>(input[input_index])}
-                          .to_string();
-                input_index++;
+                for (size_t j = 0; j < current_cluster_vector.size(); j++)
+                {
+                    auto [s, repeated] = current_cluster_vector[j];
+                    if (repeated > 1)
+                    {
+                        ss << std::format("{}{}{}{}*{}{}", misc_symbol_styling,
+                                          s.to_string(), clear, raw_styling,
+                                          repeated, clear);
+                    }
+                    else
+                    {
+                        ss << std::format("{}{}{}", misc_symbol_styling,
+                                          s.to_string(), clear);
+                    }
+                }
+                break;
             }
-            ss << " ";
-            cv_index++;
+            case ClusterType::Identifier:
+            {
+                for (size_t j = 0; j < current_cluster_vector.size(); j++)
+                {
+                    auto [s, repeated] = current_cluster_vector[j];
+                    for (int k = 0; k < repeated; k++)
+                    {
+                        ss << s.to_string();
+                    }
+                }
+                break;
+            }
         }
-        else if (cluster_vector[cv_index] == 1)
-        {
-            ss << misc_symbol_styling;
-            ss << syntrix::Symbol{static_cast<uint8_t>(input[input_index])}
-                      .to_string();
-            input_index++;
-            ss << clear;
-            ss << " ";
-            cv_index++;
-        }
-        else
-        {
-            int zero_count = 1;
-            input_index++;
-            cv_index++;
-            while (cluster_vector[cv_index] == 0 && cv_index < cluster_vector.size()){
-                zero_count++;
-                input_index++;
-                cv_index++;
-            }
-            ss << raw_styling;
-            if (zero_count == 1) {
-                ss << syntrix::Symbol{0}.to_string();
-            }
-            else {
-                ss << std::format("{}*{}", syntrix::Symbol{0}.to_string(), zero_count);
-            }
-            ss << clear;
-            ss << " ";
-        }
+        ss << " ";
     }
     std::cout << ss.str().substr(0, ss.str().length() - 1);
 }
