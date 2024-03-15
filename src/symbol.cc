@@ -34,58 +34,64 @@ syntrix::Symbol::Symbol(uint8_t byte) : literal{byte}
         case 29:
         case 30:
         case 31:
-            value = Value::NonPrintable;
+            symbol_kind = Symbol::Kind::NonPrintable;
             break;
         case 9:
+            symbol_kind = Symbol::Kind::Tab;
+            return;
         case 10:
+            symbol_kind = Symbol::Kind::NewLine;
+            return;
         case 13:
+            symbol_kind = Symbol::Kind::CarriageReturn;
+            return;
         case 32:
-            value = Value::WhiteSpace;
+            symbol_kind = Symbol::Kind::Space;
             break;
         case 33:
-            value = Value::Exclamation;
+            symbol_kind = Symbol::Kind::Exclamation;
             break;
         case 34:
-            value = Value::DoubleQuote;
+            symbol_kind = Symbol::Kind::DoubleQuote;
             break;
         case 35:
-            value = Value::HashTag;
+            symbol_kind = Symbol::Kind::HashTag;
             break;
         case 36:
-            value = Value::Dollar;
+            symbol_kind = Symbol::Kind::Dollar;
             break;
         case 37:
-            value = Value::Precent;
+            symbol_kind = Symbol::Kind::Precent;
             break;
         case 38:
-            value = Value::Ampersand;
+            symbol_kind = Symbol::Kind::Ampersand;
             break;
         case 39:
-            value = Value::SingleQuote;
+            symbol_kind = Symbol::Kind::SingleQuote;
             break;
         case 40:
-            value = Value::LParen;
+            symbol_kind = Symbol::Kind::LParen;
             break;
         case 41:
-            value = Value::RParen;
+            symbol_kind = Symbol::Kind::RParen;
             break;
         case 42:
-            value = Value::Asterisk;
+            symbol_kind = Symbol::Kind::Asterisk;
             break;
         case 43:
-            value = Value::Plus;
+            symbol_kind = Symbol::Kind::Plus;
             break;
         case 44:
-            value = Value::Comma;
+            symbol_kind = Symbol::Kind::Comma;
             break;
         case 45:
-            value = Value::Dash;
+            symbol_kind = Symbol::Kind::Dash;
             break;
         case 46:
-            value = Value::Dot;
+            symbol_kind = Symbol::Kind::Dot;
             break;
         case 47:
-            value = Value::FSlash;
+            symbol_kind = Symbol::Kind::FSlash;
             break;
         case 48:
         case 49:
@@ -97,28 +103,28 @@ syntrix::Symbol::Symbol(uint8_t byte) : literal{byte}
         case 55:
         case 56:
         case 57:
-            value = Value::Digit;
+            symbol_kind = Symbol::Kind::Digit;
             break;
         case 58:
-            value = Value::Colon;
+            symbol_kind = Symbol::Kind::Colon;
             break;
         case 59:
-            value = Value::SemiColon;
+            symbol_kind = Symbol::Kind::SemiColon;
             break;
         case 60:
-            value = Value::LT;
+            symbol_kind = Symbol::Kind::LT;
             break;
         case 61:
-            value = Value::EQ;
+            symbol_kind = Symbol::Kind::EQ;
             break;
         case 62:
-            value = Value::GT;
+            symbol_kind = Symbol::Kind::GT;
             break;
         case 63:
-            value = Value::Question;
+            symbol_kind = Symbol::Kind::Question;
             break;
         case 64:
-            value = Value::At;
+            symbol_kind = Symbol::Kind::At;
             break;
         case 65:
         case 66:
@@ -146,25 +152,25 @@ syntrix::Symbol::Symbol(uint8_t byte) : literal{byte}
         case 88:
         case 89:
         case 90:
-            value = Value::UpperCase;
+            symbol_kind = Symbol::Kind::UpperCase;
             break;
         case 91:
-            value = Value::LBracket;
+            symbol_kind = Symbol::Kind::LBracket;
             break;
         case 92:
-            value = Value::BSlash;
+            symbol_kind = Symbol::Kind::BSlash;
             break;
         case 93:
-            value = Value::RBracket;
+            symbol_kind = Symbol::Kind::RBracket;
             break;
         case 94:
-            value = Value::Circumflex;
+            symbol_kind = Symbol::Kind::Circumflex;
             break;
         case 95:
-            value = Value::UnderScore;
+            symbol_kind = Symbol::Kind::UnderScore;
             break;
         case 96:
-            value = Value::BackTick;
+            symbol_kind = Symbol::Kind::BackTick;
             break;
         case 97:
         case 98:
@@ -192,101 +198,43 @@ syntrix::Symbol::Symbol(uint8_t byte) : literal{byte}
         case 120:
         case 121:
         case 122:
-            value = Value::LowerCase;
+            symbol_kind = Symbol::Kind::LowerCase;
             break;
         case 123:
-            value = Value::LBrace;
+            symbol_kind = Symbol::Kind::LBrace;
             break;
         case 124:
-            value = Value::Pipe;
+            symbol_kind = Symbol::Kind::Pipe;
             break;
         case 125:
-            value = Value::RBrace;
+            symbol_kind = Symbol::Kind::RBrace;
             break;
         case 126:
-            value = Value::Tilde;
+            symbol_kind = Symbol::Kind::Tilde;
             break;
         case 127:
-            value = Value::Delete;
+            symbol_kind = Symbol::Kind::Delete;
             break;
         default:
-            value = Value::NonPrintable;
+            symbol_kind = Symbol::Kind::NonPrintable;
             break;
     }
 }
 
-std::string whitespace_styling = "\x1b[48;5;15m\x1b[38;5;16m";
-std::string wrapper_styling = "\x1b[38;5;33m";
-std::string raw_styling = "\x1b[38;5;196m";
-std::string semicolon_styling = "\x1b[38;5;177m";
-std::string misc_symbol_styling = "\x1b[38;5;51m";
-std::string clear = "\x1b[0m";
+syntrix::Symbol::Kind syntrix::Symbol::get_symbol_kind() {
+    return symbol_kind;
+}
+
+static std::string escaped_byte(uint8_t c) {
+    return std::format("\\{}", static_cast<unsigned int>(c));
+}
 
 std::string syntrix::Symbol::to_string()
 {
-    std::string result{};
-    bool need_style_clear = false;
-    // prestyling
-    switch (value) {
-        case WhiteSpace:
-            result += whitespace_styling;
-            need_style_clear = true;
-            break;
-        case RParen:
-        case LParen:
-        case RBrace:
-        case LBrace:
-        case RBracket:
-        case LBracket:
-            result += wrapper_styling;
-            need_style_clear = true;
-            break;
+    std::string result;
+    switch (symbol_kind) {
         case NonPrintable:
-            result += raw_styling;
-            need_style_clear = true;
-            break;
-        case SemiColon:
-            result += semicolon_styling;
-            need_style_clear = true;
-            break;
-        case LowerCase:
-        case UpperCase:
-        case Digit:
-            break;
-        case Exclamation:
-        case DoubleQuote:
-        case HashTag:
-        case Dollar:
-        case Precent:
-        case Ampersand:
-        case SingleQuote:
-        case Asterisk:
-        case Plus:
-        case Comma:
-        case Dash:
-        case Dot:
-        case FSlash:
-        case Colon:
-        case LT:
-        case EQ:
-        case GT:
-        case Question:
-        case At:
-        case BSlash:
-        case Circumflex:
-        case UnderScore:
-        case BackTick:
-        case Pipe:
-        case Tilde:
-        case Delete:
-            result += misc_symbol_styling;
-            need_style_clear = true;
-            break;
-    }
-
-    switch (value) {
-        case NonPrintable:
-            result += std::format("\\{}", static_cast<unsigned int>(value));
+            result += escaped_byte(literal);
             break;
         case LowerCase:
         case UpperCase:
@@ -294,20 +242,18 @@ std::string syntrix::Symbol::to_string()
         case UnderScore:
             result += static_cast<char>(literal);
             break;
-        case WhiteSpace:
-        {
-            if (literal == 9) {
-                result += "t";
-            } else if (literal == 32) {
-                result += " ";
-            } else if (literal == 10) {
-                result += "n" + clear + "\n";
-                need_style_clear = false;
-            } else {
-                result += "r";
-            }
+        case Space:
+            result += "Space";
             break;
-        }
+        case CarriageReturn:
+            result += "CarriageReturn";
+            break;
+        case NewLine:
+            result += "NewLine\n";
+            break;
+        case Tab:
+            result += "Tab";
+            break;
         case Exclamation:
             result += "Bang";
             break;
@@ -406,9 +352,5 @@ std::string syntrix::Symbol::to_string()
             break;
     }
 
-    // post-styling
-    if (need_style_clear) {
-        result += clear;
-    }
     return result;
 }

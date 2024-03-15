@@ -9,12 +9,15 @@ namespace syntrix
 class Symbol
 {
 public:
-    enum Value : uint8_t
+    enum Kind : uint8_t
     {
         NonPrintable,
         LowerCase,
         UpperCase,
-        WhiteSpace,
+        Space,          // ws
+        NewLine,        // ws
+        CarriageReturn, // ws
+        Tab,            // ws
         Digit,
         Exclamation,
         DoubleQuote,
@@ -56,8 +59,10 @@ public:
 
     std::string to_string();
 
+    Symbol::Kind get_symbol_kind();
+
 private:
-    Value value;
+    Kind symbol_kind;
     uint8_t literal;
 };
 
