@@ -4,7 +4,8 @@
 
 syntrix::Symbol::Symbol(uint8_t byte) : literal{byte}
 {
-    switch (byte) {
+    switch (byte)
+    {
         case 0:
         case 1:
         case 2:
@@ -221,18 +222,18 @@ syntrix::Symbol::Symbol(uint8_t byte) : literal{byte}
     }
 }
 
-syntrix::Symbol::Kind syntrix::Symbol::get_symbol_kind() {
-    return symbol_kind;
-}
+syntrix::Symbol::Kind syntrix::Symbol::get_symbol_kind() { return symbol_kind; }
 
-static std::string escaped_byte(uint8_t c) {
+static std::string escaped_byte(uint8_t c)
+{
     return std::format("\\{}", static_cast<unsigned int>(c));
 }
 
 std::string syntrix::Symbol::to_string()
 {
     std::string result;
-    switch (symbol_kind) {
+    switch (symbol_kind)
+    {
         case NonPrintable:
             result += escaped_byte(literal);
             break;
@@ -353,4 +354,26 @@ std::string syntrix::Symbol::to_string()
     }
 
     return result;
+}
+
+bool syntrix::Symbol::is_identifier()
+{
+    if (symbol_kind == syntrix::Symbol::Kind::UpperCase ||
+        symbol_kind == syntrix::Symbol::Kind::LowerCase ||
+        symbol_kind == syntrix::Symbol::Kind::UnderScore)
+    {
+        return true;
+    }
+    return false;
+}
+
+bool syntrix::Symbol::is_whitespace()
+{
+    if (symbol_kind == syntrix::Symbol::Kind::Space ||
+        symbol_kind == syntrix::Symbol::Kind::CarriageReturn ||
+        symbol_kind == syntrix::Symbol::Kind::NewLine || symbol_kind == syntrix::Symbol::Kind::Tab)
+    {
+        return true;
+    }
+    return false;
 }

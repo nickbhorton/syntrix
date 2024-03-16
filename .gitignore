@@ -31,7 +31,7 @@
 *.out
 *.app
 
-syntrix
+build
 
 # IDE
 compile_commands.json

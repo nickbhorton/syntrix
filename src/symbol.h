@@ -61,6 +61,9 @@ public:
 
     Symbol::Kind get_symbol_kind();
 
+    bool is_identifier();
+    bool is_whitespace();
+
 private:
     Kind symbol_kind;
     uint8_t literal;
